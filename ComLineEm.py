@@ -12,7 +12,6 @@ class ComLineEm:
         
         while True:
             command_line = input(f"{self.user}@{self.hostname}:{self.currentpath}$ ").split()
-                
             command= command_line[0]
             args=command_line[1:]
             if command =='help' and not args:
