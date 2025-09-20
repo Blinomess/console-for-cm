@@ -1,5 +1,7 @@
 import os
+import sys
 import socket
+
 class ComLineEm:
     def __init__(self):
         self.currentpath="~"
@@ -26,16 +28,18 @@ class ComLineEm:
                 self.cd(args)            
             else:
                 print(f"Ошибка: неизвестная команда '{command}'")
-                
+
+
     def ls(self, args):
-        print(f"Команда: ls")
+        print(f"Команда: ls - показать список файлов и папок в директории")
         print(f"Аргументы: {args}")
     
     
     def cd(self, args):
-        print(f"Команда: cd")
+        print(f"Команда: cd - сменить директорию")
         print(f"Аргументы: {args}")
     
+print ('args: ', sys.argv)
 
 if __name__ == "__main__":
     shell = ComLineEm()
