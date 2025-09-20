@@ -4,7 +4,7 @@ import socket
 
 class ComLineEm:
     def __init__(self):
-        self.currentpath="~"
+        self.currentpath="~/"
         self.user = os.getlogin()
         self.hostname = socket.gethostname()    
 
@@ -14,6 +14,8 @@ class ComLineEm:
         
         while True:
             command_line = input(f"{self.user}@{self.hostname}:{self.currentpath}$ ").split()
+            if not command_line:
+                continue
             command= command_line[0]
             args=command_line[1:]
             if command =='help' and not args:
