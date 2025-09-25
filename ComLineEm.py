@@ -1,11 +1,125 @@
 import os
-import re
 import socket
+import re
 import argparse
+import json
+import base64
+
+class VFS:
+    def __init__(self, vfs_path):
+        self.vfs_path = vfs_path
+        self.filesystem = {}
+        self.loaded = False
+        
+    def load(self):
+        try:
+            with open(self.vfs_path, 'r', encoding='utf-8') as f:
+                data = json.load(f)
+            
+            self.filesystem = data
+            self.loaded = True
+            return True
+           
+        except FileNotFoundError as e:
+            print(f"VFS файл не найден: {self.vfs_path}")
+            return False
+        
+        except json.JSONDecodeError as e:
+            print(f"Эррорка: {e}")
+            return False
+        
+        except ValueError as e:
+            print(f"Эррорка: {e}")
+            return False
+    
+    def get_file_content(self, path):
+        try:
+            current = self.filesystem
+            parts = path.strip('/').split('/')
+            
+            for part in parts:
+                if part not in current:
+                    return None
+                current = current[part]
+            
+            if isinstance(current, dict):
+                return None
+            
+            if isinstance(current, str) and current.startswith('base64:'):
+                return base64.b64decode(current[7:]).decode('utf-8')
+            
+            elif isinstance(current, str):
+                return current
+            
+            else:
+                return str(current)
+                
+        except Exception as e:
+            print(f"Ошибка чтения файла {path}: {e}")
+            return None
+    
+    def list_directory(self, path="/"):
+        try:
+            if path == "/":
+                current = self.filesystem
+            else:
+                current = self.filesystem
+                parts = path.strip('/').split('/')
+                
+                for part in parts:
+                    if part not in current:
+                        return None
+                    current = current[part]
+            
+            if not isinstance(current, dict):
+                return None
+            
+            return list(current.keys())
+            
+        except Exception as e:
+            print(f"Ошибка чтения директории {path}: {e}")
+            return None
+    
+    def path_exists(self, path):
+        try:
+            if path == "/":
+                return True
+                
+            current = self.filesystem
+            parts = path.strip('/').split('/')
+            
+            for part in parts:
+                if part not in current:
+                    return False
+                current = current[part]
+            
+            return True
+            
+        except Exception:
+            return False
+    
+    def is_directory(self, path):
+        try:
+            if path == "/":
+                return True
+                
+            current = self.filesystem
+            parts = path.strip('/').split('/')
+            
+            for part in parts:
+                if part not in current:
+                    return False
+                current = current[part]
+            
+            return isinstance(current, dict)
+            
+        except Exception:
+            return False
+
 
 class ComLineEm:
     def __init__(self, vfs_path=None, script_path=None):
-        self.currentpath="~/"
+        self.currentpath="/"
         self.user = os.getlogin()
         self.hostname = socket.gethostname()
         self.vfs_path = vfs_path
@@ -13,6 +127,13 @@ class ComLineEm:
         self.in_script_mode = False
         self.script_commands = []
         self.script_index = 0
+        self.vfs = None
+
+        if vfs_path:
+            self.vfs = VFS(vfs_path)
+            if not self.vfs.load():
+                print("Продолжение работы без vfs!")
+                self.vfs = None
 
     def run(self):
 
@@ -37,8 +158,9 @@ class ComLineEm:
 
             else:
                 try:
-                    command_line = input(f"{self.user}@{self.hostname}:{self.currentpath}$ ")
-                except (EOFError, KeyboardInterrupt):
+                    path=self.currentpath.strip('/').split('/')
+                    command_line = input(f"{self.user}@{self.hostname}:{"~/"+path[-1] if self.currentpath!="/" else "~"}$ ")
+                except (KeyboardInterrupt):
                     print("\nВыход из эмулятора")
                     break
 
@@ -49,7 +171,7 @@ class ComLineEm:
             args=command_line[1:]
 
             if command =='help' and not args:
-                print("Доступные команды: ls, cd, exit")
+                print("Доступные команды: ls, cd, echo, cat, cal, chmod, mv, exit")
                 print("Для выхода введите 'exit'")
 
             elif command == 'exit' and not args:
@@ -103,13 +225,52 @@ class ComLineEm:
             return False
     
     def ls(self, args):
-        print(f"Команда: ls - показать список файлов и папок в директории")
-        print(f"Аргументы: {args}")
-    
-    
+
+        path = self.currentpath+"/"+args[0] if args else self.currentpath
+        
+        if self.vfs:
+            if not self.vfs.path_exists(path):
+                print(f"Ошибка: путь не существует: {path}")
+                return
+                
+            if not self.vfs.is_directory(path):
+                print(f"Ошибка: не является директорией: {path}")
+                return
+                
+            items = self.vfs.list_directory(path)
+
+            if items is not None:
+                for item in sorted(items):
+                    print(item)
+            else:
+                print(f"Ошибка чтения директории: {path}")
+
+        else:
+            print("Hello there!")
+
     def cd(self, args):
-        print(f"Команда: cd - сменить директорию")
-        print(f"Аргументы: {args}")
+
+        if not args:
+            print("Ошибка: укажите путь")
+            return
+        
+        path = self.currentpath+"/"+args[0] if self.currentpath!="/" and args[0]!="/" else args[0]
+        
+        if self.vfs:
+            if not self.vfs.path_exists(path):
+                print(f"Ошибка: путь не существует: {path}")
+                return
+                
+            if not self.vfs.is_directory(path):
+                print(f"Ошибка: не является директорией: {path}")
+                return
+                
+            self.currentpath = path
+            print(f"Перешел в директорию: {"root" if path=="/" else path}")
+
+        else:
+            self.currentpath = path
+            print(f"Перешел в директорию: {path}")
 
 def parse_arguments():
     parser = argparse.ArgumentParser()
@@ -119,8 +280,8 @@ def parse_arguments():
 
 if __name__ == "__main__":
     args=parse_arguments()
-    print("Аргументы командной строки:")
-    print(f"  VFS путь: {args.vfs}")
-    print(f"  Скрипт: {args.script}")
+    print("Принимаемые аргументы:")
+    print(f"VFS: {args.vfs if args.vfs!=None else "нет"}")
+    print(f"Скрипт: {args.script if args.script!=None else "нет"}")
     shell = ComLineEm(vfs_path=args.vfs, script_path=args.script)
     shell.run()

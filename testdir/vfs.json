@@ -1,0 +1,25 @@
+{
+  "home": {
+    "user": {
+      "documents": {
+        "readme.txt": "Добро пожаловать в мои документы!\nЭто пример текстового файла.",
+        "notes.md": "# Мои заметки\n\n- Заметка 1\n- Заметка 2\n- Заметка 3"
+      },
+      "downloads": {
+        "file1.pdf": "base64:VGhpcyBpcyBhIFBERiBmaWxlIGNvbnRlbnQgKGVtdWxhdGVkKQ==",
+        "image.png": "base64:VGhpcyBpcyBhbiBpbWFnZSBmaWxlIChlbXVsYXRlZCk="
+      }
+    }
+  },
+  "var": {
+    "log": {
+      "system.log": "2024-01-15 10:30:45 - System started\n2024-01-15 10:31:02 - Service loaded",
+      "app.log": "2024-01-15 10:30:50 - Application initialized\n2024-01-15 10:31:10 - User logged in"
+    }
+  },
+  "etc": {
+    "config.json": "{\n  \"version\": \"1.0\",\n  \"settings\": {\n    \"theme\": \"dark\",\n    \"language\": \"ru\"\n  }\n}",
+    "hosts": "127.0.0.1 localhost\n::1 localhost"
+  },
+  "README.md": "# Виртуальная файловая система\n\nЭто пример VFS для эмулятора командной строки."
+}
