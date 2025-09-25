@@ -1,0 +1,4 @@
+ls
+echo sfjnf klsdf jsilfjsio
+cd
+fdsijuhfhjks
