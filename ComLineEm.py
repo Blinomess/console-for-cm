@@ -1,12 +1,8 @@
 import os
 import re
 import socket
-<<<<<<< HEAD
-import re
-=======
 import argparse
 
->>>>>>> 144c9e7563a33ff61e4f0295ee7ad6bd7af4470c
 class ComLineEm:
     def __init__(self, vfs_path=None, script_path=None):
         self.currentpath="~/"
@@ -50,12 +46,8 @@ class ComLineEm:
 
             command_line=self.parse_command_line(command_line)
             command= command_line[0]
-<<<<<<< HEAD
-            args=self.parse_command_line(command_line[1:])
-=======
             args=command_line[1:]
 
->>>>>>> 144c9e7563a33ff61e4f0295ee7ad6bd7af4470c
             if command =='help' and not args:
                 print("Доступные команды: ls, cd, exit")
                 print("Для выхода введите 'exit'")
@@ -119,32 +111,11 @@ class ComLineEm:
         print(f"Команда: cd - сменить директорию")
         print(f"Аргументы: {args}")
 
-<<<<<<< HEAD
-    def parse_command_line(self, command_line):
-        """Парсит командную строку с учетом кавычек"""
-        pattern = r'\"([^\"]*)\"|\'([^\']*)\'|(\S+)'
-        matches = re.findall(pattern, command_line)
-        result = []
-
-        for match in matches:
-            # Выбираем непустую группу из трех возможных
-            for group in match:
-                if group:
-                    result.append(group)
-                    break
-
-        return result
-    
-print ('args: ', sys.argv)
-=======
 def parse_arguments():
     parser = argparse.ArgumentParser()
     parser.add_argument('--vfs', '-v')
     parser.add_argument('--script', '-s')
     return parser.parse_args()
->>>>>>> 144c9e7563a33ff61e4f0295ee7ad6bd7af4470c
-
-
 
 if __name__ == "__main__":
     args=parse_arguments()
