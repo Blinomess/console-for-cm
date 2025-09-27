@@ -1,1 +1,1 @@
-python ComLineEm.py -s testdir/test2.txt
+python ComLineEm.py --vfs testdir/vfs.json -s testdir/test2.txt

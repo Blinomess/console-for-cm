@@ -4,12 +4,16 @@ import re
 import argparse
 import json
 import base64
+import calendar
+from datetime import datetime
 
 class VFS:
     def __init__(self, vfs_path):
         self.vfs_path = vfs_path
         self.filesystem = {}
+        self.file_permissions={}
         self.loaded = False
+        
         
     def load(self):
         try:
@@ -18,6 +22,8 @@ class VFS:
             
             self.filesystem = data
             self.loaded = True
+        
+            self.init_permissions()
             return True
            
         except FileNotFoundError as e:
@@ -31,8 +37,9 @@ class VFS:
         except ValueError as e:
             print(f"Эррорка: {e}")
             return False
+
     
-    def get_file_content(self, path):
+    def get_files(self, path):
         try:
             current = self.filesystem
             parts = path.strip('/').split('/')
@@ -58,7 +65,7 @@ class VFS:
             print(f"Ошибка чтения файла {path}: {e}")
             return None
     
-    def list_directory(self, path="/"):
+    def list_dir(self, path="/"):
         try:
             if path == "/":
                 current = self.filesystem
@@ -77,7 +84,6 @@ class VFS:
             return list(current.keys())
             
         except Exception as e:
-            print(f"Ошибка чтения директории {path}: {e}")
             return None
     
     def path_exists(self, path):
@@ -98,7 +104,7 @@ class VFS:
         except Exception:
             return False
     
-    def is_directory(self, path):
+    def is_dir(self, path):
         try:
             if path == "/":
                 return True
@@ -114,6 +120,106 @@ class VFS:
             return isinstance(current, dict)
             
         except Exception:
+            return False
+        
+    def move_file(self, src_path, dst_path):
+        
+        try:
+            if not self.path_exists(src_path):
+                return False, "Исходный путь не существует"
+            
+            if self.path_exists(dst_path):
+                return False, "Целевой путь уже существует"
+            
+            src_parts = src_path.strip('/').split('/')
+            src_name = src_parts[-1]
+            src_parent = self._get_parent(src_path)
+            
+            if src_parent is None:
+                return False, "Не удалось найти родительскую директорию"
+            
+            dst_parent_path = '/'.join(dst_path.strip('/').split('/')[:-1])
+
+            if dst_parent_path == '':
+                dst_parent_path = '/'
+            
+            if not self.path_exists(dst_parent_path) or not self.is_directory(dst_parent_path):
+                return False, "Целевая директория не существует"
+            
+            dst_parent = self.get_parent(dst_path)
+
+            if dst_parent is None:
+                return False, "Не удалось найти целевую директорию"
+            
+            dst_name = dst_path.strip('/').split('/')[-1]
+            if src_name.count('.')>0 and dst_name.count('.')>0:
+                if dst_name[dst_name.rfind('.'):]==src_name[src_name.rfind('.'):]:
+                    dst_parent[dst_name] = src_parent[src_name]
+                    del src_parent[src_name]
+                else: return False, "Неверный формат"
+
+            elif src_name.count('.')==0 and dst_name.count('.')==0:
+                dst_parent[dst_name] = src_parent[src_name]
+                del src_parent[src_name]
+
+            else: return False, "Неверный формат"
+            
+            return True, "Успешно"
+            
+        except Exception as e:
+            return False, f"Ошибка перемещения: {e}"
+    
+    def get_parent(self, path):
+
+        try:
+            if path == "/":
+                return None
+                
+            parts = path.strip('/').split('/')
+            if len(parts) == 1:
+                return self.filesystem
+                
+            current = self.filesystem
+            for part in parts[:-1]:
+                if part not in current:
+                    return None
+                current = current[part]
+            
+            return current
+            
+        except Exception:
+            return None
+        
+    def init_permissions(self):
+        def set_perms(path, obj):
+            if isinstance(obj, dict):
+                self.file_permissions[path] = '755'
+                for name, content in obj.items():
+                    new_path = f"{path}/{name}" if path != "/" else f"/{name}"
+                    set_perms(new_path, content)
+            else:
+                self.file_permissions[path] = '644'
+        
+        set_perms("/", self.filesystem)
+    
+    def get_permissions(self, path):
+        return self.file_permissions.get(path, self.file_permissions[path])
+    
+    def set_permissions(self, path, mode):
+
+        if path in self.file_permissions:
+            self.file_permissions[path] = mode
+            return True
+        return False
+        
+    def save(self):
+        try:
+            with open(self.vfs_path, 'w', encoding='utf-8') as f:
+                json.dump(self.filesystem, f, indent=2, ensure_ascii=False)
+            print(f"Изменения сохранены в: {self.vfs_path}")
+            return True
+        except Exception as e:
+            print(f"ОШИБКА СОХРАНЕНИЯ VFS: {e}")
             return False
 
 
@@ -179,17 +285,34 @@ class ComLineEm:
                 break            
 
             elif command == 'ls':
-                self.ls(args)
+                if self.ls(args) and self.in_script_mode:
+                    break
 
             elif command == 'cd':
-                self.cd(args)    
+                if self.cd(args) and self.in_script_mode:
+                    break
 
             elif command =='echo':
                 line=""
                 for arg in args:
                     line+=arg+" "
                 print(line)
+            
+            elif command == 'cat':
+                if self.cat(args) and self.in_script_mode:
+                    break
+            
+            elif command == 'cal':
+                if self.cal(args) and self.in_script_mode:
+                    break
+            
+            elif command == 'mv':
+                if self.mv(args) and self.in_script_mode:
+                    break
 
+            elif command == 'chmod':
+                if (self.chmod(args) and self.in_script_mode):
+                    break
             else:
                 print(f"Ошибка: неизвестная команда '{command}'")
                 if self.in_script_mode:
@@ -226,51 +349,196 @@ class ComLineEm:
     
     def ls(self, args):
 
-        path = self.currentpath+"/"+args[0] if args else self.currentpath
+        if len(args)>1:
+            print("Действие выплняется с одним аргументом или без аргументов!")
+            return 1
+
+        if args:
+            if self.currentpath!="/":
+                path=self.currentpath+"/"+args[0]
+            elif self.currentpath=="/" and args[0].find('/')==0:
+                path=args[0]
+            else: path="/"+args[0]
+        else: path=self.currentpath
         
         if self.vfs:
             if not self.vfs.path_exists(path):
-                print(f"Ошибка: путь не существует: {path}")
-                return
+                print(f"Эррорка: путь не существует: {path}")
+                return 1
                 
-            if not self.vfs.is_directory(path):
-                print(f"Ошибка: не является директорией: {path}")
-                return
+            if not self.vfs.is_dir(path):
+                print(f"Эррорка: не является директорией: {path}")
+                return 1
                 
-            items = self.vfs.list_directory(path)
+            items = self.vfs.list_dir(path)
 
             if items is not None:
                 for item in sorted(items):
-                    print(item)
+                    item_path = f"{path}/{item}" if path != "/" else f"/{item}"
+                    perms = self.vfs.get_permissions(item_path)
+                    print(f"{perms} {item}")
             else:
                 print(f"Ошибка чтения директории: {path}")
+                return 1
 
         else:
             print("Hello there!")
+        return 0
+    
+    def mv(self, args):
+
+        if len(args) != 2:
+            print("Эррорка: использование: mv <источник> <назначение>")
+            return 1
+            
+        src_path, dst_path = args
+        
+        src_path=self.currentpath+src_path
+        dst_path=self.currentpath+dst_path
+
+        if self.vfs:
+            success, message = self.vfs.move_file(src_path, dst_path)
+            if success:
+                print(f"Успешно: {src_path} -> {dst_path}")
+            else:
+                print(f"Эррорка: {message}")
+                return 1
+        else:
+            print(f"Перемещение: {src_path} -> {dst_path}")
+        return 0
+
 
     def cd(self, args):
 
         if not args:
-            print("Ошибка: укажите путь")
-            return
-        
-        path = self.currentpath+"/"+args[0] if self.currentpath!="/" and args[0]!="/" else args[0]
+            print("Эррорка: укажите путь")
+            return 1
+        elif len(args)!=1:
+            print("Действие выплняется с одним аргументом!")
+            return 1
+        if (args[0].find('~')==0):
+            path = args[0].strip('~').split('~')[0]
+        else:
+            path = self.currentpath+"/"+args[0] if self.currentpath!="/" and args[0]!="/" and args[0]!=".." else args[0]
         
         if self.vfs:
-            if not self.vfs.path_exists(path):
-                print(f"Ошибка: путь не существует: {path}")
-                return
+            if (not self.vfs.path_exists(path) and path!="..") or (path.count("//")>0) or (path==".." and self.currentpath=="/"):
+                print(f"Эррорка: путь не существует: {path}")
+                return 1
                 
-            if not self.vfs.is_directory(path):
-                print(f"Ошибка: не является директорией: {path}")
-                return
+            if not self.vfs.is_dir(path) and path!="..":
+                print(f"Эррорка: не является директорией: {path}")
+                return 1
+            
+            self.currentpath = path if path!=".." else '/'+'/'.join(self.currentpath.strip('/').split('/')[:-1])
+            if path=="/":
+                print("Перешел в директорию: root")
+            else: print (f"Перешел в директорию: {self.currentpath}")
+            
+        else:
+            self.currentpath = path if path!=".." else '/'+'/'.join(self.currentpath.strip('/').split('/')[:-1])
+            print(f"Перешел в директорию: {path}")
+        return 0
+    
+    def chmod(self, args):
+        if len(args) != 2:
+            print("Эррорка: использование: chmod <режим> <файл>")
+            return 1
+            
+        mode, file_path = args
+        
+        if not re.match(r'^[0-7]{3}$', mode):
+            print("Эррорка: режим должен быть трехзначным числом (например: 755)")
+            return 1
+        
+        if not file_path.startswith('/'):
+            file_path = f"{self.currentpath}/{file_path}" if self.currentpath != "/" else f"/{file_path}"
+        
+        if self.vfs:
+            if not self.vfs.path_exists(file_path):
+                print(f"Эррорка: путь не существует: {file_path}")
+                return 1
+            if self.vfs.set_permissions(file_path, mode):
+                print(f"Права доступа {file_path} изменены на {mode}")
+            else:
+                print(f"Эррорка: не удалось изменить права доступа для {file_path}")
+                return 1
+        else:
+            print(f"Права доступа {file_path} изменены на {mode} (эмуляция)")
+        
+        return 0
+
+    
+    def cat(self, args):
+        if not args:
+            print("Эррорка: укажите файл")
+            return 1
+            
+        file_path = self.currentpath+'/'+args[0] if self.currentpath!="/" and args[0]!="/" else args[0]
+        
+        if self.vfs:
+
+            if not self.vfs.path_exists(file_path):
+                print(f"Эррорка: файл не существует: {file_path}")
+                return 1
                 
-            self.currentpath = path
-            print(f"Перешел в директорию: {"root" if path=="/" else path}")
+            if self.vfs.is_dir(file_path):
+                print(f"Эррорка: является директорией: {file_path}")
+                return 1
+                
+            content = self.vfs.get_files(file_path)
+            if content is not None:
+                print(f"Содержимое файла {file_path}:")
+                print("-" * 50)
+                print(content)
+                print("-" * 50)
+            else:
+                print(f"Ошибка чтения файла: {file_path}")
+                return 1
 
         else:
-            self.currentpath = path
-            print(f"Перешел в директорию: {path}")
+            print(f"Содержимое файла {file_path}:")
+            print("-" * 40)
+            print("Это содержимое файла из VFS")
+            print("Здесь мог бы быть ваш текст...")
+            print("-" * 40)
+        return 0
+    
+    def cal(self, args):
+        now = datetime.now()
+        
+        try:
+            if len(args) == 0:
+                print(calendar.month(now.year, now.month))
+                
+            elif len(args) == 1:
+                year = int(args[0])
+                if 1 <= year <= 9999:
+                    print(calendar.calendar(year))
+                else:
+                    print("Ошибка: год должен быть от 1 до 9999")
+                    return 1
+                    
+            elif len(args) == 2:
+                month = int(args[0])
+                year = int(args[1])
+                
+                if 1 <= month <= 12 and 1 <= year <= 9999:
+                    print(calendar.month(year, month))
+                else:
+                    print("Эррорка: месяц должен быть от 1 до 12, год от 1 до 9999")
+                    return 1         
+            else:
+                print("Эррорка: слишком много аргументов")
+                print("Использование: cal [год] или cal [месяц] [год]")
+                return 1         
+        except ValueError:
+            print("Эррорка: аргументы должны быть числами")
+            return 1
+        except Exception as e:
+            print(f"Ошибка при выводе календаря: {e}")
+            return 1 
+        return 0
 
 def parse_arguments():
     parser = argparse.ArgumentParser()

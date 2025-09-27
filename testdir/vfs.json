@@ -1,13 +1,10 @@
 {
   "home": {
     "user": {
-      "documents": {
-        "readme.txt": "Добро пожаловать в мои документы!\nЭто пример текстового файла.",
-        "notes.md": "# Мои заметки\n\n- Заметка 1\n- Заметка 2\n- Заметка 3"
-      },
       "downloads": {
         "file1.pdf": "base64:VGhpcyBpcyBhIFBERiBmaWxlIGNvbnRlbnQgKGVtdWxhdGVkKQ==",
-        "image.png": "base64:VGhpcyBpcyBhbiBpbWFnZSBmaWxlIChlbXVsYXRlZCk="
+        "image.png": "base64:VGhpcyBpcyBhbiBpbWFnZSBmaWxlIChlbXVsYXRlZCk=",
+        "te.st.txt": "Hi, there!"
       }
     }
   },
@@ -19,7 +16,11 @@
   },
   "etc": {
     "config.json": "{\n  \"version\": \"1.0\",\n  \"settings\": {\n    \"theme\": \"dark\",\n    \"language\": \"ru\"\n  }\n}",
-    "hosts": "127.0.0.1 localhost\n::1 localhost"
+    "hosts": "127.0.0.1 localhost\n::1 localhost",
+    "documents": {
+      "notes.md": "# Мои заметки\n\n- Заметка 1\n- Заметка 2\n- Заметка 3",
+      "readme.txt": "Добро пожаловать в мои документы!\nЭто пример текстового файла."
+    }
   },
   "README.md": "# Виртуальная файловая система\n\nЭто пример VFS для эмулятора командной строки."
 }

@@ -1,5 +1,5 @@
 ls
 echo Hello, World!
-cd
+cd home
 help
 exit
