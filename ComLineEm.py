@@ -29,15 +29,6 @@ class VFS:
         except FileNotFoundError as e:
             print(f"VFS файл не найден: {self.vfs_path}")
             return False
-        
-        except json.JSONDecodeError as e:
-            print(f"Эррорка: {e}")
-            return False
-        
-        except ValueError as e:
-            print(f"Эррорка: {e}")
-            return False
-
     
     def get_files(self, path):
         try:
@@ -66,129 +57,114 @@ class VFS:
             return None
     
     def list_dir(self, path="/"):
-        try:
-            if path == "/":
-                current = self.filesystem
-            else:
-                current = self.filesystem
-                parts = path.strip('/').split('/')
-                
-                for part in parts:
-                    if part not in current:
-                        return None
-                    current = current[part]
-            
-            if not isinstance(current, dict):
-                return None
-            
-            return list(current.keys())
-            
-        except Exception as e:
-            return None
-    
-    def path_exists(self, path):
-        try:
-            if path == "/":
-                return True
-                
+        if path == "/":
+            current = self.filesystem
+        else:
             current = self.filesystem
             parts = path.strip('/').split('/')
-            
+                
             for part in parts:
-                if part not in current:
-                    return False
-                current = current[part]
-            
-            return True
-            
-        except Exception:
-            return False
-    
-    def is_dir(self, path):
-        try:
-            if path == "/":
-                return True
-                
-            current = self.filesystem
-            parts = path.strip('/').split('/')
-            
-            for part in parts:
-                if part not in current:
-                    return False
-                current = current[part]
-            
-            return isinstance(current, dict)
-            
-        except Exception:
-            return False
-        
-    def move_file(self, src_path, dst_path):
-        
-        try:
-            if not self.path_exists(src_path):
-                return False, "Исходный путь не существует"
-            
-            if self.path_exists(dst_path):
-                return False, "Целевой путь уже существует"
-            
-            src_parts = src_path.strip('/').split('/')
-            src_name = src_parts[-1]
-            src_parent = self._get_parent(src_path)
-            
-            if src_parent is None:
-                return False, "Не удалось найти родительскую директорию"
-            
-            dst_parent_path = '/'.join(dst_path.strip('/').split('/')[:-1])
-
-            if dst_parent_path == '':
-                dst_parent_path = '/'
-            
-            if not self.path_exists(dst_parent_path) or not self.is_directory(dst_parent_path):
-                return False, "Целевая директория не существует"
-            
-            dst_parent = self.get_parent(dst_path)
-
-            if dst_parent is None:
-                return False, "Не удалось найти целевую директорию"
-            
-            dst_name = dst_path.strip('/').split('/')[-1]
-            if src_name.count('.')>0 and dst_name.count('.')>0:
-                if dst_name[dst_name.rfind('.'):]==src_name[src_name.rfind('.'):]:
-                    dst_parent[dst_name] = src_parent[src_name]
-                    del src_parent[src_name]
-                else: return False, "Неверный формат"
-
-            elif src_name.count('.')==0 and dst_name.count('.')==0:
-                dst_parent[dst_name] = src_parent[src_name]
-                del src_parent[src_name]
-
-            else: return False, "Неверный формат"
-            
-            return True, "Успешно"
-            
-        except Exception as e:
-            return False, f"Ошибка перемещения: {e}"
-    
-    def get_parent(self, path):
-
-        try:
-            if path == "/":
-                return None
-                
-            parts = path.strip('/').split('/')
-            if len(parts) == 1:
-                return self.filesystem
-                
-            current = self.filesystem
-            for part in parts[:-1]:
                 if part not in current:
                     return None
                 current = current[part]
             
-            return current
-            
-        except Exception:
+        if not isinstance(current, dict):
             return None
+            
+        return list(current.keys())
+    
+    def path_exists(self, path):
+        if path == "/":
+            return True
+                
+        current = self.filesystem
+        parts = path.strip('/').split('/')
+            
+        for part in parts:
+            if part not in current:
+                return False
+            current = current[part]
+            
+        return True
+
+    
+    def is_dir(self, path):
+        if path == "/":
+            return True
+                
+        current = self.filesystem
+        parts = path.strip('/').split('/')
+            
+        for part in parts:
+            if part not in current:
+                return False
+            current = current[part]
+            
+        return isinstance(current, dict)
+        
+    def move_file(self, src_path, dst_path):
+
+        if not self.path_exists(src_path):
+            print(src_path)
+            return False, "Исходный путь не существует"
+            
+        if self.path_exists(dst_path):
+            return False, "Целевой путь уже существует"
+
+        src_parts = src_path.strip('/').split('/')
+        src_name = src_parts[-1]
+        src_parent = self.get_parent(src_path)
+            
+        if src_parent is None:
+            return False, "Не удалось найти родительскую директорию"
+            
+        dst_parent_path = '/'.join(dst_path.strip('/').split('/')[:-1])
+
+        if dst_parent_path == '':
+            dst_parent_path = '/'
+            
+        if not self.path_exists(dst_parent_path) or not self.is_dir(dst_parent_path):
+            return False, "Целевая директория не существует"
+            
+        dst_parent = self.get_parent(dst_path)
+
+        if dst_parent is None:
+            return False, "Не удалось найти целевую директорию"
+            
+        dst_name = dst_path.strip('/').split('/')[-1]
+        if src_name.count('.')>0 and dst_name.count('.')>0:
+            if dst_name[dst_name.rfind('.'):]==src_name[src_name.rfind('.'):]:
+                dst_parent[dst_name] = src_parent[src_name]
+                del src_parent[src_name]
+            else: return False, "Неверный формат"
+
+        elif src_name.count('.')==0 and dst_name.count('.')==0:
+            dst_parent[dst_name] = src_parent[src_name]
+            del src_parent[src_name]
+
+        else: return False, "Неверный формат"
+        
+        if src_path in self.file_permissions:
+            self.file_permissions[dst_path] = self.file_permissions[src_path]
+            del self.file_permissions[src_path]
+            
+        return True, "Успешно"
+    
+    def get_parent(self, path):
+        if path == "/":
+            return None
+                
+        parts = path.strip('/').split('/')
+        if len(parts) == 1:
+            return self.filesystem
+                
+        current = self.filesystem
+        for part in parts[:-1]:
+            if part not in current:
+                return None
+            current = current[part]
+            
+        return current
         
     def init_permissions(self):
         def set_perms(path, obj):
@@ -203,24 +179,23 @@ class VFS:
         set_perms("/", self.filesystem)
     
     def get_permissions(self, path):
-        return self.file_permissions.get(path, self.file_permissions[path])
+        if path in self.file_permissions:
+            return self.file_permissions[path]
+        
+        if self.is_dir(path):
+            return '755'
+        else:
+            return '644'
     
     def set_permissions(self, path, mode):
-
-        if path in self.file_permissions:
-            self.file_permissions[path] = mode
-            return True
-        return False
+        self.file_permissions[path] = mode
+        return True
         
     def save(self):
-        try:
-            with open(self.vfs_path, 'w', encoding='utf-8') as f:
-                json.dump(self.filesystem, f, indent=2, ensure_ascii=False)
-            print(f"Изменения сохранены в: {self.vfs_path}")
-            return True
-        except Exception as e:
-            print(f"ОШИБКА СОХРАНЕНИЯ VFS: {e}")
-            return False
+        with open(self.vfs_path, 'w', encoding='utf-8') as f:
+            json.dump(self.filesystem, f, indent=2, ensure_ascii=False)
+        print(f"Изменения сохранены в: {self.vfs_path}")
+        return
 
 
 class ComLineEm:
@@ -238,7 +213,7 @@ class ComLineEm:
         if vfs_path:
             self.vfs = VFS(vfs_path)
             if not self.vfs.load():
-                print("Продолжение работы без vfs!")
+                print("Продолжение работы без vfs")
                 self.vfs = None
 
     def run(self):
@@ -256,9 +231,11 @@ class ComLineEm:
             if self.in_script_mode:
 
                 command_line = self.script_commands[self.script_index]
+
                 self.script_index += 1
-                
-                if self.script_index == len(self.script_commands): self.in_script_mode=False
+
+                if self.script_index == len(self.script_commands): 
+                    self.in_script_mode=False
 
                 print(f"{self.user}@{self.hostname}:{self.currentpath}$ {command_line}")
 
@@ -338,27 +315,38 @@ class ComLineEm:
     def load_script(self):
         try:
             with open(self.script_path, 'r', encoding='utf-8') as f:
-                self.script_commands = [line.strip() for line in f if line.strip() and not line.strip().startswith('#')]
+                self.script_commands = [line.strip() for line in f]
             return True
         except FileNotFoundError:
             print(f"Эррорка: неправильный файл {self.script_path}")
-            return False
-        except Exception as e:
-            print(f"Эррорка: неправильный скрипт {e}")
             return False
     
     def ls(self, args):
 
         if len(args)>1:
-            print("Действие выплняется с одним аргументом или без аргументов!")
-            return 1
+            if args[0]!="-l":
+                print("Действие выплняется с одним аргументом или без аргументов")
+                return 1
 
         if args:
-            if self.currentpath!="/":
-                path=self.currentpath+"/"+args[0]
-            elif self.currentpath=="/" and args[0].find('/')==0:
-                path=args[0]
-            else: path="/"+args[0]
+            if args[0]!="-l":
+                if self.currentpath!="/" and not args[0].startswith('~'):
+                    path=self.currentpath+"/"+args[0]
+                elif self.currentpath=="/" and args[0].find('/')==0:
+                    path=args[0]
+                elif args[0].startswith('~'):
+                    path=(args[0])[1:]
+                else: path="/"+args[0]
+            else:
+                if len(args)>1:
+                    if self.currentpath!="/" and not args[1].startswith('~'):
+                        path=self.currentpath+"/"+args[1]
+                    elif self.currentpath=="/" and args[1].find('/')==0:
+                        path=args[1]
+                    elif args[1].startswith('~'):
+                        path=(args[1])[1:]
+                    else: path="/"+args[1]
+                else: path=self.currentpath
         else: path=self.currentpath
         
         if self.vfs:
@@ -373,10 +361,14 @@ class ComLineEm:
             items = self.vfs.list_dir(path)
 
             if items is not None:
-                for item in sorted(items):
-                    item_path = f"{path}/{item}" if path != "/" else f"/{item}"
-                    perms = self.vfs.get_permissions(item_path)
-                    print(f"{perms} {item}")
+                if args and args[0]=="-l":
+                    for item in sorted(items):
+                        item_path = f"{path}/{item}" if path != "/" else f"/{item}"
+                        perms = self.vfs.get_permissions(item_path)
+                        print(f"{perms} {item}")
+                else:
+                    for item in sorted(items):
+                        print(item)
             else:
                 print(f"Ошибка чтения директории: {path}")
                 return 1
@@ -393,13 +385,25 @@ class ComLineEm:
             
         src_path, dst_path = args
         
-        src_path=self.currentpath+src_path
-        dst_path=self.currentpath+dst_path
+        if src_path.startswith('~'):
+            src_path=src_path[1:]
+        elif src_path.startswith('/'):
+            src_path=self.currentpath+src_path[1:]
+        else: 
+            src_path=self.currentpath+"/"+src_path
+        if dst_path.startswith('~'):
+            dst_path=dst_path[1:]
+        elif dst_path.startswith('/'):
+            dst_path=self.currentpath+dst_path[1:]
+        else: 
+            dst_path=self.currentpath+dst_path
 
         if self.vfs:
             success, message = self.vfs.move_file(src_path, dst_path)
             if success:
                 print(f"Успешно: {src_path} -> {dst_path}")
+                if self.in_script_mode==0:
+                    self.vfs.save()
             else:
                 print(f"Эррорка: {message}")
                 return 1
@@ -414,14 +418,17 @@ class ComLineEm:
             print("Эррорка: укажите путь")
             return 1
         elif len(args)!=1:
-            print("Действие выплняется с одним аргументом!")
+            print("Действие выплняется с одним аргументом")
             return 1
         if (args[0].find('~')==0):
-            path = args[0].strip('~').split('~')[0]
+            path = (args[0])[1:]
         else:
             path = self.currentpath+"/"+args[0] if self.currentpath!="/" and args[0]!="/" and args[0]!=".." else args[0]
         
         if self.vfs:
+            if path==".":
+                print(f"Перешел в директорию: {self.currentpath}")
+                return 0
             if (not self.vfs.path_exists(path) and path!="..") or (path.count("//")>0) or (path==".." and self.currentpath=="/"):
                 print(f"Эррорка: путь не существует: {path}")
                 return 1
@@ -448,7 +455,7 @@ class ComLineEm:
         mode, file_path = args
         
         if not re.match(r'^[0-7]{3}$', mode):
-            print("Эррорка: режим должен быть трехзначным числом (например: 755)")
+            print("Эррорка: режим должен состоять из 3 цифр")
             return 1
         
         if not file_path.startswith('/'):
@@ -505,8 +512,7 @@ class ComLineEm:
         return 0
     
     def cal(self, args):
-        now = datetime.now()
-        
+        now = datetime.now()     
         try:
             if len(args) == 0:
                 print(calendar.month(now.year, now.month))
@@ -535,9 +541,6 @@ class ComLineEm:
         except ValueError:
             print("Эррорка: аргументы должны быть числами")
             return 1
-        except Exception as e:
-            print(f"Ошибка при выводе календаря: {e}")
-            return 1 
         return 0
 
 def parse_arguments():

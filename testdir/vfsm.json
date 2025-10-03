@@ -1,0 +1,19 @@
+{
+  "home":{
+    "user": {
+      "downloads": {
+        "file1.pdf": "base64:VGhpcyBpcyBhIFBERiBmaWxlIGNvbnRlbnQgKGVtdWxhdGVkKQ==",
+        "image.png": "base64:VGhpcyBpcyBhbiBpbWFnZSBmaWxlIChlbXVsYXRlZCk=",
+        "te.st.txt": "Hi, there!"
+    }
+  }
+},
+  "var": {
+    "log": {
+    }
+  },
+  "etc": {
+    "config.json": "{\n  \"version\": \"1.0\",\n  \"settings\": {\n    \"theme\": \"dark\",\n    \"language\": \"ru\"\n  }\n}",
+    "hosts": "127.0.0.1 localhost\n::1 localhost"
+  }
+}

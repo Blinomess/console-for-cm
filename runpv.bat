@@ -1,0 +1,1 @@
+python ComLineEm.py --vfs testdir/vfsm.json

@@ -1,10 +1,15 @@
 {
-  "home": {
+  "home":{
     "user": {
       "downloads": {
         "file1.pdf": "base64:VGhpcyBpcyBhIFBERiBmaWxlIGNvbnRlbnQgKGVtdWxhdGVkKQ==",
         "image.png": "base64:VGhpcyBpcyBhbiBpbWFnZSBmaWxlIChlbXVsYXRlZCk=",
-        "te.st.txt": "Hi, there!"
+        "te.st.txt": "Hi, there!",
+        "Homework":{
+          "DO NOT OPEN":{
+            "joke.txt": "Встретились два еврея и один другого спросил. — Слушай, Авраам, займи два рубля. — У меня только один. — Давай пока один, второй должен будешь."
+          }
+        }
       }
     }
   },
@@ -21,6 +26,5 @@
       "notes.md": "# Мои заметки\n\n- Заметка 1\n- Заметка 2\n- Заметка 3",
       "readme.txt": "Добро пожаловать в мои документы!\nЭто пример текстового файла."
     }
-  },
-  "README.md": "# Виртуальная файловая система\n\nЭто пример VFS для эмулятора командной строки."
+  }
 }

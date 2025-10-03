@@ -1,1 +1,5 @@
+help
 echo bla bla bla
+cal
+ls
+exit

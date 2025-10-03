@@ -1,4 +1,9 @@
 ls
-echo sfjnf klsdf jsilfjsio
-cd
-fdsijuhfhjks
+cd home/user/downloads
+cat image.png
+cd /
+mv ~/home/user/downloads/te.st.txt etc/test.txt
+ls etc
+chmod 604 etc/test.txt
+ls -l etc
+unkowncommand

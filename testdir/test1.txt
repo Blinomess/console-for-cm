@@ -1,0 +1,7 @@
+ls
+cd home
+ls
+mv ~/var/readme.txt ~/home/documents/readme.txt
+ls documents
+cal 12 2007
+exit

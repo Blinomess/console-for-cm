@@ -1,0 +1,1 @@
+python ComLineEm.py --vfs testdir/vfsmin.json -s testdir/test1.txt 
