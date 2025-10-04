@@ -183,3 +183,60 @@
 <hr> 
 <h2>Особенности реализации</h2> 
 <p>Эмулятор полностью работает в памяти, не модифицируя реальную файловую систему. VFS загружается из JSON-файла, где бинарные данные кодируются в base64. Поддерживается остановка выполнения скрипта при первой ошибке. Все изменения VFS могут сохраняться обратно в исходный JSON-файл.</p>
+<hr>
+<h2>Описание команд для сборки проекта и запуска тестов</h2>
+<p>Чтобы запустить эмулятор командной строки, вам нужен Python версии 3.7 и файл ComLineEm.py.</p>
+<p>Базовый запуск: 
+
+```python ComLineEm.py``` - откроет интерактивную командную строку. </p>
+<p>Для расширенной функциональности используйте параметры: --vfs для загрузки виртуальной файловой системы из JSON-файла, например:
+
+```python ComLineEm.py --vfs vfs.json```
+
+Используйте --script для автоматического выполнения команд из файла-скрипта, например:
+
+```python ComLineEm.py --script test.txt```
+
+Оба параметра можно комбинировать: 
+
+```python ComLineEm.py --vfs vfs.json --script text.txt```
+ 
+Файлы VFS содержат структуру папок и файлов в JSON-формате, а скрипты - последовательности команд для автоматического выполнения.</p>
+<hr>
+<h2>Примеры использования</h2>
+
+```Run Command Line
+python ComLineEm.py --vfs testdir/vfsm.json -s testdir/test2.txt 
+Принимаемые аргументы:
+VFS: testdir/vfsm.json
+Скрипт: testdir/test2.txt
+Введите help для получения списка команд
+--------------------------------------------------
+NicholasPC@Nicholas-PC:/$ ls
+etc
+home
+var
+NicholasPC@Nicholas-PC:/$ cd home/user/downloads
+Перешел в директорию: home/user/downloads
+NicholasPC@Nicholas-PC:home/user/downloads$ cat image.png
+Содержимое файла home/user/downloads/image.png:
+--------------------------------------------------
+This is an image file (emulated)
+--------------------------------------------------
+NicholasPC@Nicholas-PC:home/user/downloads$ cd /
+Перешел в директорию: root
+NicholasPC@Nicholas-PC:/$ mv ~/home/user/downloads/te.st.txt etc/test.txt
+Успешно: /home/user/downloads/te.st.txt -> /etc/test.txt
+NicholasPC@Nicholas-PC:/$ ls etc
+config.json
+hosts
+test.txt
+NicholasPC@Nicholas-PC:/$ chmod 604 etc/test.txt
+Права доступа /etc/test.txt изменены на 604
+NicholasPC@Nicholas-PC:/$ ls -l etc
+644 config.json
+644 hosts
+604 test.txt
+NicholasPC@Nicholas-PC:/$ unkowncommand
+Ошибка: неизвестная команда 'unkowncommand'
+```
